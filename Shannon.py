@@ -2,12 +2,15 @@
 
 Shannon Equation for Dummies  - JPC Feb 2021
 
-Educational Application - Runs either in local windows or in web pages
+Educational Application
 
-The Web version via localhost are fully functional although not as convenient as the windowed version (only 1 plot open)
+Exploration from Claude's Shannon initial theory to its practical application to satellite communications
 
-The Web version in remote does work for a single user (all users connected can send command and see the same page),
+The application Runs either in local windows or in web pages
 
+The Web version via localhost is fully functional although not as convenient as the windowed version (only 1 plot open)
+
+The Web version in remote does work for a single user (all users connected can send command but see the same page)
 
 --------------------------------------------------------------------------------------------------------------------'''
 
@@ -24,6 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import webbrowser
 import Shannon_Dict as Shd
+import sqlite3
 
 Web_Version=False  #
 Web_Remote=False  #
@@ -131,6 +135,169 @@ def Loss_Format(Loss=10):
     return "{:.2}".format(Loss) + ' .. ' + "{:.1f}".format(Loss_dB) + ' dB'
 
 
+''' ------------------------------------------ Core Functions ---------------------------------------------------
+
+Functions for management of users' contributions
+
+'''
+
+def Contribution_Write (DB_File) :
+
+    Sh_DB=sqlite3.connect(DB_File)
+    Sh_DB_c=Sh_DB.cursor()
+
+    Sh_DB_c.execute("CREATE TABLE IF NOT EXISTS contributions "
+                    "(num INTEGER, name TEXT, title TEXT, keywords TEXT, text TEXT, date TEXT, password TEXT)")
+    Sh_DB.commit()
+
+    Sh_DB_c.execute("SELECT MAX(num) FROM contributions")
+    ID_Contrib=Sh_DB_c.fetchall()[0][0]
+
+    if ID_Contrib == None:
+        ID_Contrib = 0
+
+    print (ID_Contrib)
+
+    layout3 = [ [sg.Text('Initials / name',size=(20,1), justification='center'),
+                 sg.Input('',size=(45,1), key='-Name-')],
+                [sg.Text('Title ', size=(20, 1), justification='center'),
+                 sg.Input('', size=(45, 1), key='-Title-')],
+                [sg.Text('Keywords ',size=(20,1), justification='center'),
+                 sg.Input('', size=(45,1), key='-Keywords-')],
+                [sg.Text('Password ', size=(20, 1), justification='center'),
+                 sg.Input('', size=(45, 1), key='-Password-')],
+                [sg.Frame('Write your text here',
+                            [[sg.Multiline('', size=(80, 15), key='-Text-')],
+                            [sg.Button('Validate'),
+                             sg.Button('Exit'),
+                            sg.Button('Help')]],
+                            element_justification='center')]
+              ]
+    window3 = sg.Window('Write Contribution', layout3, finalize=True)
+
+    while True:
+        event3, values = window3.read()
+        print(event3)
+
+        if event3 == sg.WIN_CLOSED or event3 == 'Exit' : # if user closes window
+            break
+
+        elif event3 == 'Validate' :
+
+            ID_Contrib += 1
+
+            Sh_DB_c.execute("INSERT INTO contributions VALUES ( " + str (ID_Contrib) + ", '" + values['-Name-'] +
+                        "', '" + values['-Title-'] + "', '" + values['-Keywords-'] + "', '" + values['-Text-'] +
+                        "', " + "Date('now')" + ", '" + values['-Password-'] + "' )")
+            Sh_DB.commit()
+
+            window3['-Text-'].Update('Thank you, your contribution has been successfully stored, ID #'+str(ID_Contrib))
+
+        elif event3 == 'Help':
+            window3['-Text-'].Update('Write your contribution here as a free text. Edit it in the text window until you'
+                    ' are happy with the result and then Validate. \n\nContributions should be candid observations'
+                    ' about the technical subject, references to relevant material (ideally as web pointers), open '
+                    ' discussion items about adjacent subjects, suggestion for improvement... \n\nYou can retrieve'
+                    ' your contribution via a search from the Read Panel and delete them there with the relevant '
+                    'password. Keeping the "no password" default will allow anyone to delete.')
+
+    Sh_DB.close()
+
+    window3.close()
+
+    return ID_Contrib
+
+def Contribution_Read (DB_File) :
+
+    layout4 = [ [sg.Text('Filter on Name',size=(20,1), justification='center'),
+                 sg.Input('',size=(45,1), key='-Name-')],
+                [sg.Text('Filter on Title ', size=(20, 1), justification='center'),
+                 sg.Input('', size=(45, 1), key='-Title-')],
+                [sg.Text('Filter on Keywords ',size=(20,1), justification='center'),
+                 sg.Input('', size=(45,1), key='-Keywords-')],
+                [sg.Text('Filter on Content ', size=(20, 1), justification='center'),
+                 sg.Input('', size=(45, 1), key='-Content-')],
+                [sg.Frame('Contribution',
+                            [[sg.Multiline('', size=(80, 15), key='-Text-')],
+                            [sg.Button('Load / Filter', key='-Filter-'),
+                             sg.Button('Read Next', key='-Next-'),
+                             sg.Button('Delete', key='-Del-'),
+                             sg.Button('Exit'),
+                             sg.Button('Help')]],
+                            element_justification='center')]
+              ]
+    window4 = sg.Window('Read Contributions', layout4)
+
+    Sh_DB = sqlite3.connect(DB_File)
+    Sh_DB_c = Sh_DB.cursor()
+
+    DB_ind = 0
+
+    while True:
+
+        event4, values = window4.read()
+
+        print(event4)
+
+        if event4 == sg.WIN_CLOSED or event4 == 'Exit': # if user closes window
+            break
+
+        elif event4 == '-Filter-':
+
+            Name = "'%" + values['-Name-'] + "%'"
+            Title = "'%" + values['-Title-'] + "%'"
+            Keywords = "'%" + values['-Keywords-'] + "%'"
+            Content = "'%" + values['-Content-'] + "%'"
+            Sh_DB_c.execute("SELECT num, name, title, keywords, text, date, password FROM contributions WHERE " +
+                            "name LIKE " + Name +
+                            " AND title LIKE " + Title +
+                            " AND keywords LIKE " + Keywords +
+                            " AND text LIKE " + Content +
+                            " ORDER BY num DESC "
+                            " LIMIT 50 ")
+            DB_Extract = Sh_DB_c.fetchall()
+
+            print(len(DB_Extract))
+
+            if len(DB_Extract) > 0 : # First Contribution read automatically
+
+                window4['-Text-'].Update( DB_Extract[0][2] + ' , ' + DB_Extract[0][1]
+                        + '\n\n' + DB_Extract[0][4] + '\n\n Keywords : ' + DB_Extract[0][3]
+                        + '\n\n ID #' + str(DB_Extract[0][0]) + ' - ' + str(DB_Extract[0][5]) )
+                DB_ind = 1
+
+        elif event4 == '-Next-' and DB_ind>0 :
+
+            if DB_ind < len(DB_Extract):
+                window4['-Text-'].Update(DB_Extract[DB_ind][2] + ' , ' + DB_Extract[DB_ind][1]
+                                + '\n\n' + DB_Extract[DB_ind][4] + '\n\n Keywords : ' + DB_Extract[DB_ind][3]
+                                + '\n\n ID #' + str(DB_Extract[DB_ind][0]) + ' - ' + str(DB_Extract[DB_ind][5]))
+                DB_ind +=1
+
+        elif event4 == '-Del-':
+            Password = sg.popup_get_text('Enter Item\'s Password')
+            print (Password)
+            DB_ind -= 1
+            if DB_Extract[DB_ind][6] == Password :
+                Item_num=DB_Extract[DB_ind][0]
+                Sh_DB_c.execute("DELETE FROM contributions WHERE num = " + str(Item_num))
+                window4['-Text-'].Update('Item ID# '+ str(Item_num) + ' deleted')
+            else:
+                window4['-Text-'].Update('Incorrect password, item unaffected')
+
+        elif event4 == 'Help':
+            window4['-Text-'].Update('To read contributions you have to load them first. If the search fields are empty'
+                                ', all contributions will be loaded. You should only enter 1 item per search field.'
+                                '\n\n You can delete items if you know the associated password. Items are not encrypted'
+                                ' in the Database and can be removed by the admin.')
+
+    Sh_DB.commit()
+    Sh_DB.close()
+    window4.close()
+
+    return DB_ind
+
+
 ''' ------------------------------------------ Main Program ---------------------------------------------------
 
 The program has 2 main panels associated with events collection loops
@@ -141,43 +308,46 @@ In the windowed version, matplotlib plots don't interfere with the event loops :
  
 '''
 
-form_i={"size":(22,1),"justification":'left',"enable_events":True}   # input format
-form_o={"size":(65,1),"justification":'right',"enable_events":True}  # output format, also using input elements
+# ---------------- First Panel : Shannon's Equation  -------------------
+
+form_i = {"size":(22,1),"justification":'left',"enable_events":True}   # input label format
+form_ov = {"size":(20,1),"justification":'center'}   # output value format
+form_o = {"size":(65,1),"justification":'right',"enable_events":True}  # output label format, also using input elements
+
+sg.set_options(auto_size_buttons=False, button_element_size=(14,1))
 
 col1=sg.Column([[sg.Frame('Theoretical Exploration',
         [[sg.Text(' Reference C/N [dB] ',**form_i,key='-iCNR-'),sg.Input('12',size=(5,1),key='-CNR-')],
         [sg.Text(' Reference BW [MHz] ',**form_i,key='-iBW-'),sg.Input('36',size=(5,1),key='-BW-')],
         [sg.Text('Power to Noise Power Density Ratio : C/N\N{SUBSCRIPT ZERO}', **form_o,key='-iC_N0-'),
-         sg.Input(size=(10,1),key='-C_N0-')],
+         sg.Input(**form_ov,key='-C_N0-')],
         [sg.Text('Theoretical BR at infinite BW : 1.44 C/N\N{SUBSCRIPT ZERO}', **form_o,key='-iBRinf-'),
-         sg.Input(size=(10,1),key='-BRinf-')],
+         sg.Input(**form_ov,key='-BRinf-')],
         [sg.Text('Theoretical BR at Spectral Efficiency = 1 : C/N\N{SUBSCRIPT ZERO}', **form_o,key='-iBRunit-'),
-         sg.Input(size=(10,1),key='-BRunit-')],
+         sg.Input(**form_ov,key='-BRunit-')],
         [sg.Text('Theoretical BR at Reference (BW,C/N)', **form_o,key='-iBRbw-'),
-         sg.Input(size=(10, 1), key='-BRbw-')],
+         sg.Input(**form_ov, key='-BRbw-')],
         [sg.Text('C / N = C / (N\N{SUBSCRIPT ZERO}.B) [Linear Format]', **form_o,key='-iCNRlin-'),
-         sg.Input(size=(10, 1), key='-CNRlin-')],
+         sg.Input(**form_ov, key='-CNRlin-')],
         [sg.Text(' BW Increase Factor ',**form_i,key='-iBWmul-'),
          sg.Input('1', size=(5, 1), key='-BWmul-')],
         [sg.Text(' Power Increase Factor ',**form_i,key='-iCmul-'),
          sg.Input('2', size=(5, 1), key='-Cmul-')],
         [sg.Text('Bit Rate Increase Factor', **form_o,key='-iBRmul-'),
-         sg.Input(size=(10, 1), key='-BRmul-')],
-        [sg.Button('Evaluation', key='-Evaluation-',bind_return_key = True),
-         sg.Button('BW Sensitivity',key='-BW_Graph-'),
+         sg.Input(**form_ov, key='-BRmul-')],
+         [sg.Button(' Evaluation ', key='-Evaluation-', bind_return_key = True),
+         sg.Button('BW Sensitivity', key='-BW_Graph-'),
          sg.Button('Power Sensitivity',key='-Pow_Graph-'),
-         sg.Button('BR Factor Map',key='-Map-'),
-         sg.Button('Go to Real World',key='-Real-')]],
-        )]
-        ])
+         sg.Button('BR Factor Map', key='-Map-'),
+         sg.Button('Go to Real World', key='-Real-')]])]])
 
 col2=sg.Column([[sg.Frame('Background Information (click on items)',
-                [[sg.Multiline('Click on parameter\'s label to get information',size=(70,16),key='-Dialog-')],
-                [sg.Button('Advanced'), sg.Button('Write Contribution'),
-                 sg.Button('Read Contributions'),sg.Button('Help')]])]])
+                [[sg.Multiline('Click on parameter\'s label to get information',size=(80,15),key='-Dialog-')],
+                [sg.Button('Advanced'), sg.Button('Write Contribution', key='-Write_Ct-'),
+                 sg.Button('Read Contributions',key='-Read_Ct-'),sg.Button('Help')]], element_justification='center')]])
 
-layout=[[sg.Text('')],
-        [sg.Button('https://en.wikipedia.org/wiki/Claude_Shannon',key='-Wiki-')],
+layout=[
+        [sg.Button('Wiki : Claude_Shannon',size=(25,1), key='-Wiki-')],
         [sg.Image(filename='Shannon.png',key='-iShannon-',enable_events=True, background_color='black')],
         [col1,col2]
         ]
@@ -190,13 +360,14 @@ window['-BW-'].Update('36')
 window['-BWmul-'].Update('1')
 window['-Cmul-'].Update('2')
 
-Win_time_out = 10  # Forces window's reading at first pass
+Win_time_out = 500   # Time out approach required for enter capture in the Web version
+First_Pass = True
+Err_msg = False
 
 while True:
 
     event, values = window.read(timeout=Win_time_out, timeout_key='__TIMEOUT__')
     print (event)
-    Win_time_out = None
 
     try:
 
@@ -205,8 +376,9 @@ while True:
 
         elif event == '-Evaluation-' or event == '__TIMEOUT__' :
 
-            if event == '__TIMEOUT__' :
-                window['-Dialog-'].Update(Shd.Help['-iShannon-'])  # Display at first pass
+            if First_Pass :
+                window['-Dialog-'].Update(Shd.Help['-iShannon-'])
+                First_Pass = False
 
             CNR_Nyq=float(values['-CNR-'])
             BW_Nyq=float(values['-BW-'])
@@ -254,7 +426,8 @@ while True:
                 BR_norm = BR[ind] / BR[3]
                 plt.plot(BW[ind], BR[ind], Mark[i] + 'b', label="{:.1f}".format(BW[ind]) + " MHz" +
                                             "  ,  {:.1f}".format(BR[ind]) + " Mbps" + " : {:.0%}".format(BR_norm))
-            plt.title('Theoretical Bit Rate at Constant C/N\N{SUBSCRIPT ZERO} =  ' + "{:.1f}".format(C_N0_l) + " MHz" )
+            plt.title('Theoretical Bit Rate at Constant Power\nC/N\N{SUBSCRIPT ZERO} =  ' +
+                      "{:.1f}".format(C_N0_l) + " MHz" )
             plt.xlabel('Bandwidth [MHz]')
             plt.ylabel('Bit Rate [Mbps]')
             plt.grid(True)
@@ -266,27 +439,28 @@ while True:
                 plt.show(block=False)
 
         elif event == '-Pow_Graph-':
-            SNR = np.zeros(20)
+            P_mul = np.zeros(20)
             BR = np.zeros(20)
             CNR = np.zeros(20)
-            SNR[0] = 10 ** ( CNR_Nyq / 10 ) / 8  #Linear Format
+            P_mul[0] = 1 / 8
             CNR[0] = CNR_Nyq - 10 * log(8, 10)
             BR[0] = Shannon(BW_Nyq, CNR[0])
             for i in range(1, 20):
-                SNR[i] = SNR[i-1] * 2 ** ( 1 / 3 )
+                P_mul[i] = P_mul[i-1] * 2 ** ( 1 / 3 )
                 CNR[i] = CNR[i - 1] + 10 * log( 2 ** ( 1 / 3 ), 10 )
                 BR[i] = Shannon(BW_Nyq, CNR[i])
             fig = plt.figure(figsize=(6, 4))
             ax = fig.add_subplot(111)
-            plt.plot(SNR, BR, 'b')
+            plt.plot(P_mul, BR, 'b')
             Mark = ('D', 's', 'p', 'h', 'x')
             for i in range(5):
                 ind = 3 * (i + 1)
                 BR_norm = BR[ind] / BR[9]
-                plt.plot(SNR[ind], BR[ind], Mark[i] + 'b', label="{:.1f}".format(SNR[ind]) +
-                            "x   ,  {:.1f}".format(BR[ind]) + " Mbps" + " : {:.0%}".format(BR_norm))
-            plt.title('Theoretical Bit Rate at Constant Bandwidth : ' + "{:.1f}".format(BW_Nyq) + " MHz")
-            plt.xlabel('Signal Power to Noise Power Ratio [ Linear ]')
+                plt.plot(P_mul[ind], BR[ind], Mark[i] + 'b', label='{:.2f}'.format(P_mul[ind]) +
+                            'x   ,  {:.1f}'.format(BR[ind]) + ' Mbps' + ' : {:.0%}'.format(BR_norm))
+            plt.title('Theoretical Bit Rate at Constant Bandwidth : ' + '{:.1f}'.format(BW_Nyq) + ' MHz \n'
+                            'Reference : C/N =  {:.1f}'.format(CNR_l) + ' [Linear Format]')
+            plt.xlabel('Power Multiplying Factor')
             plt.ylabel('Bit Rate [Mbps]')
             plt.grid(True)
             plt.legend(loc='lower right')
@@ -321,14 +495,24 @@ while True:
             else:
                 plt.show(block=False)
 
-        elif event == '-Real-': # ---------------- Opening of Second Window -------------------
+        elif event == '-Write_Ct-' :
+            Contribution_Write('Shannon_Theory.db')
+
+        elif event == '-Read_Ct-' :
+            Contribution_Read('Shannon_Theory.db')
+
+        elif event == '-Real-': # ---------------- Second Panel : Real World  -------------------
 
             fr1 = sg.Frame('Satellite Link',[
                     [sg.Text('Frequency  [GHz]',**form_i,key='-iFreq-'),
                      sg.Input('12', size=(5, 1), key='-Freq-'),
-                    sg.Text('HPA Output Power [W]',**form_i,key='-iHPA-'),
-                     sg.Input('120', size=(5, 1), key='-HPA_P-')],
-                    [sg.Text('Output Losses [dB]',**form_i,key='-iLoss-'),
+                     sg.Text('Path Length [km] ​', **form_i, key='-iPath-'),
+                     sg.Input('38000', size=(5, 1), key='-Path_Length-'),
+                     sg.Text('Rain & Gaz Attenuation [dB] ​', **form_i, key='-iFade-'),
+                     sg.Input('0.6', size=(5, 1), key='-Rain_Fade-')],
+                    [sg.Text('HPA Output Power [W]',**form_i,key='-iHPA-'),
+                     sg.Input('120', size=(5, 1), key='-HPA_P-'),
+                    sg.Text('Output Losses [dB]',**form_i,key='-iLoss-'),
                      sg.Input('2', size=(5, 1), key='-Losses-'),
                     sg.Text('Impairments C/I [dB]', **form_i, key='-iSCIR-'),
                      sg.Input('20', size=(5, 1), key='-Sat_CIR-')],
@@ -336,10 +520,6 @@ while True:
                      sg.Input('3', size=(5, 1), key='-Sat_Beam-'),
                     sg.Text('Offset from Peak [dB] ',**form_i,key='-iGOff-'),
                      sg.Input('0', size=(5, 1), key='-Gain_Offset-')],
-                    [sg.Text('Path Length [km] ​',**form_i,key='-iPath-'),
-                     sg.Input('38000', size=(5, 1), key='-Path_Length-'),
-                    sg.Text('Rain & Gaz Attenuation [dB] ​',**form_i,key='-iFade-'),
-                     sg.Input('0.6', size=(5, 1), key='-Rain_Fade-')],
                     [sg.Text('Output Power', **form_o,key='-iOPow-'),
                     sg.Input('', size=(35, 1), key='-Feed_P-', justification='center')],
                     [sg.Text('Satellite Antenna Gain​', **form_o,key='-iSGain-'),
@@ -350,8 +530,7 @@ while True:
                     sg.Input('', size=(35, 1), key='-PLoss-', justification='center')],
                     [sg.Text('Power Flux Density', **form_o,key='-iPFD-'),
                     sg.Input('', size=(35, 1), key='-PFD-', justification='center')],
-                    ])
-
+                    ], key='-SatLink-')
 
             fr2=sg.Frame('Radio Front End ',[
                     [sg.Text('Customer Antenna Size [m] ​',**form_i,key='-iCPE-'),
@@ -371,21 +550,20 @@ while True:
                     [sg.Text('Bit Rate at Spectral Efficiency=1', **form_o,key='-iBRUnit-'),
                     sg.Input('', size=(35, 1), key='-BRUnit-', justification='center')],
                     [sg.Text('Bit Rate at Spectral Efficiency=2', **form_o,key='-iBRdouble-'),
-                    sg.Input('', size=(35, 1), key='-BRdouble-', justification='center')],
-                    ])
-
+                    sg.Input('', size=(35, 1), key='-BRdouble-', justification='center')]
+                    ], key='-iRadio-')
 
             fr3=sg.Frame('Baseband Unit',[
                     [sg.Text('Available Bandwidth [MHz]',**form_i,key='-iBW-'),
-                     sg.Input('36', size=(5, 1), key='-BW-'),
+                    sg.Input('36', size=(5, 1), key='-BW-'),
                     sg.Text('Nyquist Filter Rolloff [%]',**form_i,key='-iRO-'),
-                     sg.Input('5', size=(5, 1), key='-RO-')],
+                    sg.Input('5', size=(5, 1), key='-RO-'),
+                    sg.Text('Higher Layers Overhead [%]', **form_i, key='-iOH-'),
+                    sg.Input('5', size=(5, 1), key='-OH-')],
                     [sg.Text('Signal Impairments C/I [dB]',**form_i,key='-iCIR-'),
-                     sg.Input('20', size=(5, 1), key='-CIR-'),
+                    sg.Input('20', size=(5, 1), key='-CIR-'),
                     sg.Text('Code Penalty vs theory [dB]​',**form_i,key='-iPenalty-'),
-                     sg.Input('1', size=(5, 1), key='-Penalty-')],
-                    [sg.Text('Higher Layers Overhead [%]',**form_i,key='-iOH-'),
-                     sg.Input('5', size=(5, 1), key='-OH-')],
+                    sg.Input('1', size=(5, 1), key='-Penalty-')],
                     [sg.Text('Nyquist Bandwidth', **form_o,key='-iNBW-'),
                     sg.Input('', size=(35, 1), key='-N_BW-', justification='center')],
                     [sg.Text('Signal to Noise Ratio in Available BW', **form_o,key='-iCNRbw-'),
@@ -407,22 +585,22 @@ while True:
                     sg.Button('Power Sensitivity',key='-Pow_Graph-'),
                     sg.Button('BR Factor Map', key='-Map-'),
                     sg.Button('Back to Theory', key='-Back-')],
-                    ])
+                    ], key='-Baseband-')
 
             fr4 = sg.Frame('Background Information (click on items)',
-                    [[sg.Multiline('Click on parameter\'s label to get information', size=(70, 16),key='-Dialog-')],
-                    [sg.Button('Advanced'), sg.Button('Write Contribution'),
-                    sg.Button('Read Contributions'), sg.Button('Help')]])
+                    [[sg.Multiline('Click on parameter\'s label to get information', size=(80, 15),key='-Dialog-')],
+                    [sg.Button('Advanced'), sg.Button('Write Contribution', key='-Write_Ct-'),
+                    sg.Button('Read Contributions',key='-Read_Ct-'), sg.Button('Help')]],element_justification='center')
 
-
-            layout2 =[[sg.Text('')],
+            layout2 =[
                     [sg.Column([[fr1],[fr2],[fr3]]),
-                    sg.Column([[sg.Button('wiki : Harry Nyquist​', size=(25,1), key='-W_Nyquist-'),
-                    sg.Button('wiki : Richard Hamming​', size=(25,1), key='-W_Hamming-')],
-                    [sg.Button('wiki : Andrew Viterbi​', size=(25,1), key='-W_Viterbi-'),
-                    sg.Button('wiki : Claude Berrou​', size=(25,1), key='-W_Berrou-')],
+                    sg.Column([[sg.Text('',size=(1,1))],
+                    [sg.Button('Wiki : Harry Nyquist​', size=(25,1), key='-W_Nyquist-'),
+                    sg.Button('Wiki : Richard Hamming​', size=(25,1), key='-W_Hamming-')],
+                    [sg.Button('Wiki : Andrew Viterbi​', size=(25,1), key='-W_Viterbi-'),
+                    sg.Button('Wiki : Claude Berrou​', size=(25,1), key='-W_Berrou-')],
                     [sg.Image(filename='Satellite.png', key='-Satellite-',background_color='black', enable_events=True)],
-                    [fr4]],element_justification='center')]]
+                    [fr4]], element_justification='center')]]
 
             window2 = sg.Window('Shannon and Friends in the Real World', layout2, finalize=True)
 
@@ -443,23 +621,23 @@ while True:
             window2['-RO-'].Update('5')
             window2['-OH-'].Update('5')
 
-            Win_time_out=10  # Forces window's reading at first pass
+            First_Pass = True
 
             while True:
 
-                event, values = window2.read(timeout=Win_time_out,timeout_key = '__TIMEOUT__')
-                print(event)
-                Win_time_out=None
+                event2, values = window2.read(timeout=Win_time_out,timeout_key = '__TIMEOUT__')
+                print(event2)
 
                 try:
 
-                    if event == sg.WIN_CLOSED or event== '-Back-':  # closes window
+                    if event2 == sg.WIN_CLOSED or event2== '-Back-':  # closes window
                         break
 
-                    elif event == '-Evaluation-'or event == '__TIMEOUT__' :
+                    elif event2 == '-Evaluation-'or event2 == '__TIMEOUT__' :
 
-                        if event == '__TIMEOUT__':
-                            window2['-Dialog-'].Update(Shd.Help2['-Satellite-'])  # Display Help at first pass
+                        if First_Pass :
+                            window2['-Dialog-'].Update(Shd.Help2['-Satellite-'])
+                            First_Pass = False
 
                         Freq = float(values['-Freq-']) # GHz
                         HPA_Power = float(values['-HPA_P-']) # Watts
@@ -580,14 +758,15 @@ while True:
                         window2['-BRhigh-'].Update(BR_Format(BR_Rcv_Higher)+" .. {:.0%}".format(BR_Rcv_H_Norm)+
                                         " .. {:.1f}".format(Spe_Higher)+" bps/Hz")
 
-                    elif event in ('-iFreq-','-iHPA-','-iSBeam-','-iPath-', '-iLoss-', '-iGOff-','-iFade-', '-iSCIR-',
+                    elif event2 in ('-iFreq-','-iHPA-','-iSBeam-','-iPath-', '-iLoss-', '-iGOff-','-iFade-', '-iSCIR-',
                                       '-iOPow-','-iSGain-', '-iEIRP-', '-iPFD-', '-iCPE-','-iCGain-','-iRXPow-',
                                       '-iBRinf-','-iBRhalf-', '-iBRUnit-','-iBRdouble-','-iBW-','-iRO-','-iCIR-',
                                       '-iPenalty-', '-iOH-','-iNBW-', '-iCNRbw-','-iCNRnyq-','-iCNRrcv-','-iBRbw-',
                                       '-iBRnyq-','-iBRrcv-','-iBRhigh-','-Satellite-','-iPLoss-','Advanced','Help',
                                       '-iN0-', '-iCPE_T-'):
-                        window2['-Dialog-'].Update(Shd.Help2[event])
-                    elif event == '-BW_Graph-' :
+                        window2['-Dialog-'].Update(Shd.Help2[event2])
+                        
+                    elif event2 == '-BW_Graph-' :
                         BW = np.zeros(20)
                         BR = np.zeros(20)
                         CNR = np.zeros(20)
@@ -622,7 +801,7 @@ while True:
                         else:
                             plt.show(block=False)
 
-                    elif event == '-Pow_Graph-' :
+                    elif event2 == '-Pow_Graph-' :
                         Power = np.zeros(20)
                         BR = np.zeros(20)
                         CNR = np.zeros(20)
@@ -657,7 +836,7 @@ while True:
                         else:
                             plt.show(block=False)
 
-                    elif event == '-Map-':
+                    elif event2 == '-Map-':
                         BR_mul = np.zeros((21, 21))
                         BW_mul = np.zeros((21, 21))
                         P_mul = np.zeros((21, 21))
@@ -688,22 +867,37 @@ while True:
                         else:
                             plt.show(block=False)
 
-                    elif event == '-W_Nyquist-':
+                    elif event2 == '-W_Nyquist-':
                         webbrowser.open('https://en.wikipedia.org/wiki/Harry_Nyquist')
-                    elif event == '-W_Hamming-':
+                    elif event2 == '-W_Hamming-':
                         webbrowser.open('https://en.wikipedia.org/wiki/Richard_Hamming​')
-                    elif event == '-W_Viterbi-':
+                    elif event2 == '-W_Viterbi-':
                         webbrowser.open('https://en.wikipedia.org/wiki/Andrew_Viterbi')
-                    elif event == '-W_Berrou-':
+                    elif event2 == '-W_Berrou-':
                         webbrowser.open('https://en.wikipedia.org/wiki/Claude_Berrou​')
 
-                except ValueError:
-                    print(sg.popup_ok('Input fields only support numerical values'))
+                    elif event2 == '-Write_Ct-':
+                        Contribution_Write('Shannon_Real.db')
 
-            print(window2.close())
-            Win_time_out = 10  # Forces first window's reading at return from second window
+                    elif event2 == '-Read_Ct-':
+                        Contribution_Read('Shannon_Real.db')
+
+                except ValueError:
+                    window2['-Dialog-'].Update('Input fields only support numerical values')
+                    Err_msg=True
+                else:
+                    if Err_msg :
+                        window2['-Dialog-'].Update('Input Validated')
+                        Err_msg = False
+
+            window2.close()
 
     except ValueError:
-        print(sg.popup_ok('Input fields only support numerical values'))
+        window['-Dialog-'].Update('Input fields only support numerical values')
+        Err_msg = True
+    else:
+        if Err_msg:
+            window['-Dialog-'].Update('Input Validated')
+            Err_msg = False
 
 window.close()
