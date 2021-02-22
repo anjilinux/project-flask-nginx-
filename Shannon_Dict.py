@@ -272,6 +272,5 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                'The units for the different figures are as explicit as possible to facilitate the exploration.\n\n'
                'Despite the simplicity of the approach, the tool can also be useful to do a quick analysis of a '
                'communication link with a first order approach, avoiding the trap of the illusion of precision.\n\n'
-
         }
 
