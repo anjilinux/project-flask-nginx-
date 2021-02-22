@@ -29,7 +29,7 @@ import webbrowser
 import Shannon_Dict as Shd
 import sqlite3
 
-Web_Version=False  #
+Web_Version=True  #
 Web_Remote=False  #
 
 if Web_Version :
