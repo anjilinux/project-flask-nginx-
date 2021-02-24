@@ -28,8 +28,9 @@ import numpy as np
 import webbrowser
 import Shannon_Dict as Shd
 import sqlite3
+import os
 
-Web_Version=True  #
+Web_Version=False  #
 Web_Remote=False  #
 
 if Web_Version :
@@ -226,11 +227,15 @@ def Contribution_Read (DB_File) :
                              sg.Button('Help')]],
                             element_justification='center')]
               ]
+
+    if os.path.isfile(DB_File):
+        Sh_DB = sqlite3.connect(DB_File)
+        Sh_DB_c = Sh_DB.cursor()
+    else:
+        sg.popup('No Database Found', keep_on_top=True)
+        return 0
+
     window4 = sg.Window('Read Contributions', layout4)
-
-    Sh_DB = sqlite3.connect(DB_File)
-    Sh_DB_c = Sh_DB.cursor()
-
     DB_ind = 0
 
     while True:
@@ -314,7 +319,7 @@ form_i = {"size":(22,1),"justification":'left',"enable_events":True}   # input l
 form_ov = {"size":(20,1),"justification":'center'}   # output value format
 form_o = {"size":(65,1),"justification":'right',"enable_events":True}  # output label format, also using input elements
 
-sg.set_options(auto_size_buttons=False, button_element_size=(14,1))
+sg.set_options(auto_size_buttons=False, button_element_size=(14,1), element_padding =(5,5))
 
 col1=sg.Column([[sg.Frame('Theoretical Exploration',
         [[sg.Text(' Reference C/N [dB] ',**form_i,key='-iCNR-'),sg.Input('12',size=(5,1),key='-CNR-')],
@@ -335,8 +340,8 @@ col1=sg.Column([[sg.Frame('Theoretical Exploration',
          sg.Input('2', size=(5, 1), key='-Cmul-')],
         [sg.Text('Bit Rate Increase Factor', **form_o,key='-iBRmul-'),
          sg.Input(**form_ov, key='-BRmul-')],
-         [sg.Button(' Evaluation ', key='-Evaluation-', bind_return_key = True),
-         sg.Button('BW Sensitivity', key='-BW_Graph-'),
+         [sg.Button(' Evaluation ', key='-Evaluation-', visible=False, bind_return_key = True),
+         sg.Button('BW Sensitivity', pad=((60,5),(5,5)), key='-BW_Graph-'),
          sg.Button('Power Sensitivity',key='-Pow_Graph-'),
          sg.Button('BR Factor Map', key='-Map-'),
          sg.Button('Go to Real World', key='-Real-')]])]])
@@ -509,7 +514,7 @@ while True:
                      sg.Text('Path Length [km] ​', **form_i, key='-iPath-'),
                      sg.Input('38000', size=(5, 1), key='-Path_Length-'),
                      sg.Text('Rain & Gaz Attenuation [dB] ​', **form_i, key='-iFade-'),
-                     sg.Input('0.6', size=(5, 1), key='-Rain_Fade-')],
+                     sg.Input('0.2', size=(5, 1), key='-Rain_Fade-')],
                     [sg.Text('HPA Output Power [W]',**form_i,key='-iHPA-'),
                      sg.Input('120', size=(5, 1), key='-HPA_P-'),
                     sg.Text('Output Losses [dB]',**form_i,key='-iLoss-'),
@@ -526,7 +531,7 @@ while True:
                     sg.Input('', size=(35, 1), key='-Sat_G-', justification='center')],
                     [sg.Text('Equivalent Isotropic Radiated Power​', **form_o,key='-iEIRP-'),
                     sg.Input('', size=(35, 1), key='-EIRP-', justification='center')],
-                    [sg.Text('Free Space Loss', **form_o, key='-iPLoss-'),
+                    [sg.Text('Path Dispersion Loss', **form_o, key='-iPLoss-'),
                     sg.Input('', size=(35, 1), key='-PLoss-', justification='center')],
                     [sg.Text('Power Flux Density', **form_o,key='-iPFD-'),
                     sg.Input('', size=(35, 1), key='-PFD-', justification='center')],
@@ -554,7 +559,7 @@ while True:
                     ], key='-iRadio-')
 
             fr3=sg.Frame('Baseband Unit',[
-                    [sg.Text('Available Bandwidth [MHz]',**form_i,key='-iBW-'),
+                    [sg.Text('Occupied Bandwidth [MHz]',**form_i,key='-iBW-'),
                     sg.Input('36', size=(5, 1), key='-BW-'),
                     sg.Text('Nyquist Filter Rolloff [%]',**form_i,key='-iRO-'),
                     sg.Input('5', size=(5, 1), key='-RO-'),
@@ -562,8 +567,8 @@ while True:
                     sg.Input('5', size=(5, 1), key='-OH-')],
                     [sg.Text('Signal Impairments C/I [dB]',**form_i,key='-iCIR-'),
                     sg.Input('20', size=(5, 1), key='-CIR-'),
-                    sg.Text('Code Penalty vs theory [dB]​',**form_i,key='-iPenalty-'),
-                    sg.Input('1', size=(5, 1), key='-Penalty-')],
+                    sg.Text('Implementation Penalty vs theory [dB]​',**form_i,key='-iPenalty-'),
+                    sg.Input('1.5', size=(5, 1), key='-Penalty-')],
                     [sg.Text('Nyquist Bandwidth', **form_o,key='-iNBW-'),
                     sg.Input('', size=(35, 1), key='-N_BW-', justification='center')],
                     [sg.Text('Signal to Noise Ratio in Available BW', **form_o,key='-iCNRbw-'),
@@ -580,8 +585,8 @@ while True:
                     sg.Input('', size=(35, 1), key='-BRrcv-', justification='center')],
                     [sg.Text('Practical Higher Layers Bit Rate', **form_o,key='-iBRhigh-'),
                     sg.Input('', size=(35, 1), key='-BRhigh-', justification='center')],
-                    [sg.Button('Evaluation', key='-Evaluation-',bind_return_key = True),
-                    sg.Button('BW Sensitivity',key='-BW_Graph-'),
+                    [sg.Button('Evaluation', key='-Evaluation-',visible=False, bind_return_key = True),
+                    sg.Button('BW Sensitivity', pad=((100,5),(5,5)), key='-BW_Graph-'),
                     sg.Button('Power Sensitivity',key='-Pow_Graph-'),
                     sg.Button('BR Factor Map', key='-Map-'),
                     sg.Button('Back to Theory', key='-Back-')],
@@ -612,10 +617,10 @@ while True:
             window2['-Sat_Beam-'].Update('3')
             window2['-Gain_Offset-'].Update('0')
             window2['-Path_Length-'].Update('38000')
-            window2['-Rain_Fade-'].Update('0.6')
+            window2['-Rain_Fade-'].Update('0.2')
             window2['-CPE_Ant-'].Update('0.6')
             window2['-CPE_T-'].Update('120')
-            window2['-Penalty-'].Update('1')
+            window2['-Penalty-'].Update('1.5')
             window2['-BW-'].Update('36')
             window2['-CIR-'].Update('25')
             window2['-RO-'].Update('5')
@@ -630,7 +635,7 @@ while True:
 
                 try:
 
-                    if event2 == sg.WIN_CLOSED or event2== '-Back-':  # closes window
+                    if event2 == sg.WIN_CLOSED or event2  == '-Back-':  # closes window
                         break
 
                     elif event2 == '-Evaluation-'or event2 == '__TIMEOUT__' :
@@ -649,7 +654,6 @@ while True:
                         Sat_Ant_eff = 0.6
                         Path_Length = float(values['-Path_Length-'])  # kilometer
                         Rain_Fade = float(values['-Rain_Fade-'])  #dB
-                        Athmo_Loss = 0.6  # dB
                         window2['-Feed_P-'].Update(Power_Format(Sig_Power))
 
                         Lambda = 300e6 / Freq / 1e9  # meter
@@ -664,18 +668,21 @@ while True:
                         EIRP_dB = 10 * log(EIRP_l, 10)
                         window2['-EIRP-'].Update(Power_Format(EIRP_l))
 
-                        Path_Loss_l = (4 * pi * Path_Length * 1000 / Lambda) ** 2
+                        Free_Space_Loss_l = (4 * pi * Path_Length * 1000 / Lambda) ** 2
+                        Free_Space_Loss_dB = 10 * log(Free_Space_Loss_l, 10)
+
+                        Path_Loss_l = 4 * pi * (Path_Length * 1000) ** 2
                         Path_Loss_dB = 10 * log(Path_Loss_l, 10)
                         window2['-PLoss-'].Update(Loss_Format(Path_Loss_l)+'m\N{SUPERSCRIPT TWO}')
 
-                        PFD_l = EIRP_l / (4 * pi * (Path_Length * 1000) ** 2) * 10 ** (-(Athmo_Loss+Rain_Fade)/ 10)
+                        PFD_l = EIRP_l / Path_Loss_l * 10 ** (-Rain_Fade/ 10)
                         PFD_dB = 10 * log(PFD_l, 10)
                         window2['-PFD-'].Update(PFD_Format(PFD_l))
 
                         CPE_Ant_d = float(values['-CPE_Ant-'])  # meter
                         CPE_T_Clear= float(values['-CPE_T-'])  # K
                         CPE_Ant_eff = 0.6
-                        CPE_T_Att = (CPE_T_Clear - 40) + 40 * 10 ** (-Rain_Fade/10) + 290 * ( 1 - 10 ** (-Rain_Fade/10))
+                        CPE_T_Att = (CPE_T_Clear - 40) + 40 * 10 ** (-Rain_Fade/10) + 290 * (1 - 10 ** (-Rain_Fade/10))
                         k_Boltz = 1.38e-23  # J/K
                         Penalties = float(values['-Penalty-'])  # dB, code penalty
                         Bandwidth = float(values['-BW-'])  # MHz
@@ -691,7 +698,8 @@ while True:
                         window2['-CPE_G-'].Update(
                             "{:.1f}".format(CPE_Ae)+" m\N{SUPERSCRIPT TWO} .. {:.1f}".format(CPE_G_T)+" dB/K")
 
-                        RX_Power_l = PFD_l * CPE_Ae  # Alternative : RX_Power_l=EIRP_l/Path_Loss_l*CPE_Gain_l
+                        RX_Power_l = PFD_l * CPE_Ae
+                        # Alternative : RX_Power_l=EIRP_l/Free_Space_Loss_l*CPE_Gain_l
                         RX_Power_dB = 10 * log(RX_Power_l,10)
                         N0 = k_Boltz * CPE_T_Att  # W/Hz
                         C_N0_l = RX_Power_l / N0  # Hz
@@ -788,9 +796,9 @@ while True:
                             BR_norm = BR[ind] / BR[3]
                             plt.plot(BW[ind], BR[ind], Mark[i] + 'b',label="{:.1f}".format(BW[ind]) +
                                         " MHz" + "  ,  {:.1f}".format(BR[ind]) + " Mbps" + " : {:.0%}".format(BR_norm))
-                        plt.title('Practical Higher Layers Bit Rate at Constant Power : ' +
+                        plt.title('Higher Layers Bit Rate at Constant HPA Output Power : ' +
                                         "{:.1f}".format(HPA_Power) + " W")
-                        plt.xlabel('Bandwidth [MHz]')
+                        plt.xlabel('Occupied Bandwidth [MHz]')
                         plt.ylabel('Bit Rate [Mbps]')
                         plt.grid(True)
                         plt.legend(loc='lower right')
@@ -823,9 +831,9 @@ while True:
                             BR_norm=BR[ind]/BR[9]
                             plt.plot(Power[ind], BR[ind], Mark[i] + 'b', label="{:.1f}".format(Power[ind]) + " W" +
                                                 "  ,  {:.1f}".format(BR[ind]) + " Mbps"+" : {:.0%}".format(BR_norm))
-                        plt.title('Practical Higher Layers Bit Rate at Constant Bandwidth : ' +
+                        plt.title('Higher Layers Bit Rate at Constant Occupied Bandwidth : ' +
                                                 "{:.1f}".format(Bandwidth) + " MHz")
-                        plt.xlabel('Power [Watts]')
+                        plt.xlabel('HPA Output Power @ Operating Point [Watts]')
                         plt.ylabel('Bit Rate [Mbps]')
                         plt.grid(True)
                         plt.legend(loc='lower right')
@@ -870,17 +878,20 @@ while True:
                     elif event2 == '-W_Nyquist-':
                         webbrowser.open('https://en.wikipedia.org/wiki/Harry_Nyquist')
                     elif event2 == '-W_Hamming-':
-                        webbrowser.open('https://en.wikipedia.org/wiki/Richard_Hamming​')
+                        webbrowser.open('https://en.wikipedia.org/wiki/Richard_Hamming')
                     elif event2 == '-W_Viterbi-':
                         webbrowser.open('https://en.wikipedia.org/wiki/Andrew_Viterbi')
                     elif event2 == '-W_Berrou-':
-                        webbrowser.open('https://en.wikipedia.org/wiki/Claude_Berrou​')
+                        webbrowser.open('https://en.wikipedia.org/wiki/Claude_Berrou')
 
                     elif event2 == '-Write_Ct-':
                         Contribution_Write('Shannon_Real.db')
 
                     elif event2 == '-Read_Ct-':
                         Contribution_Read('Shannon_Real.db')
+
+                    else:
+                        print("Untrapped event : "+event2)
 
                 except ValueError:
                     window2['-Dialog-'].Update('Input fields only support numerical values')

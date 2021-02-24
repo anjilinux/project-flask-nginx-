@@ -71,7 +71,7 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                    'used in DTH. In single feed per beam HTS, a 1 dB value would give a typical median performance.'
                    'If you know the EIRP you have, the best is to iterate this value to get this EIRP '
                    '(the process will allow you to get a feeling of the tradeoff power / footprint size / EIRP. ',
-        '-iPath-':'Path Lenght [km]\n\nDistance in kilometers from the satellite to the customer\'s terminal. '
+        '-iPath-':'Path Length [km]\n\nDistance in kilometers from the satellite to the customer\'s terminal. '
                   'The actual distance depends on the orbit\'s altitude and on the positions of the satellite and '
                   'the terminal.\n\nMinimum distances : GEO : 36000 km, O3B : 8000 km, Starlink : 550 km,\n\nTypical '
                   'distances : GEO : 38000 km, O3B : 9000 km, Starlink : 700 km.',
@@ -110,9 +110,9 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                   '(lossless antenna).\n\n'
                   'As the value in watts is usually pretty big, a value in dBW is more convenient '
                   'for practical human computations.',
-        '-iPLoss-':'Free Space Loss\n\nAssuming communication in free space (thus also in the vacuum), '
+        '-iPLoss-':'Path Dispersion Loss\n\nAssuming communication in free space (thus also in the vacuum), '
                    'this figure characterises the effect'
-                   ' of the distance from the satellite ot the terminal. It gives an attenuation equivalent to the '
+                   ' of the distance from the satellite to the terminal. It gives an attenuation equivalent to the '
                    'inverse ratio of the power reaching one square meter at the terminal side and the equivalent '
                    'isotropic radiated power at satellite level.\n\n'         
                    'This simply equals the surface in square meters of a sphere with a radius equal to the path length.'
@@ -186,12 +186,14 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                 'Impairments are multiple : Phase Noise of the radio front end, Quantization Noise of the receiver\'s '
                 'Analog to Digital Conversion, effect of imperfect synchronisation ...\n\n'
                 'Typical values of C/I corresponding to total implementation impairments range from 15 to 25 dB',
-        '-iPenalty-':'Modulation and Coding Penalty vs theory [dB]\n\nTurbo and Turbo-like Codes are known for getting '
+        '-iPenalty-':'Implementation Penalty vs theory [dB]\n\nTurbo and Turbo-like Codes are known for getting '
                      '"almost Shannon" performances. There are however still some implementation taxes '
                      ': codes always have a residual bit error rate, making it very low requires some CNR margin.\n\n'
                      'Other practical aspects also cost signal\'s energy like time and frequency synchronisation, '
                      'physical layer framing...\n\n DVB-S2x, using LDPC codes and modern modulation related features '
-                     'is typically 1 dB away of the Shannon Limit in Quasi Error Free operation. '
+                     'is typically 1 dB away of the Shannon Limit in Quasi Error Free operation. Real systems also have'
+                     ' to take margins, considering a reasonable value of 0.5 dB, a total penalty of 1.5 dB can be '
+                     'considered as typical.\n\n'
                      'Original Turbo codes designed with higher residual bit error rates can get much closer '
                      'to the Shannon Limit. ',
         '-iOH-':'Higher Layers Overhead [%]\n\n The practical usage of information bits is based on a breakdown '
@@ -272,5 +274,6 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                'The units for the different figures are as explicit as possible to facilitate the exploration.\n\n'
                'Despite the simplicity of the approach, the tool can also be useful to do a quick analysis of a '
                'communication link with a first order approach, avoiding the trap of the illusion of precision.\n\n'
+
         }
 
