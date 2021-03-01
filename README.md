@@ -17,4 +17,4 @@ The value of the application is essentially in the background information access
 A Knowedge DB is coupled to the application for collaborative contributions on the subject opening technical discussions. 
 At this stage the DB is local.
 
-Athough the scripts are small, pyinstaller generates 800M of files for sandalone distribution !!! 
+Athough the scripts are small, pyinstaller generates 70M of files for sandalone distribution.
