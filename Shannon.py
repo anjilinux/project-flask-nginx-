@@ -29,6 +29,7 @@ import webbrowser
 import Shannon_Dict as Shd
 import sqlite3
 import os
+import binascii
 
 Web_Version=False  #
 Web_Remote=False  #
@@ -136,7 +137,7 @@ def Loss_Format(Loss=10):
     return "{:.2}".format(Loss) + ' .. ' + "{:.1f}".format(Loss_dB) + ' dB'
 
 
-''' ------------------------------------------ Core Functions ---------------------------------------------------
+''' ------------------------------------------ Database Functions ---------------------------------------------------
 
 Functions for management of users' contributions
 
@@ -303,6 +304,25 @@ def Contribution_Read (DB_File) :
     return DB_ind
 
 
+''' ------------------------------------------ GUI Functions---------------------------------------------------
+
+LEDs  from PySimpleGUI demos
+
+'''
+
+
+def LEDIndicator(key=None, radius=30):
+    return sg.Graph(canvas_size=(radius, radius),
+             graph_bottom_left=(-radius, -radius),
+             graph_top_right=(radius, radius),
+             pad=(0, 0), key=key)
+
+def SetLED(window, key, color):
+    graph = window[key]
+    graph.erase()
+    graph.draw_circle((0, 0), 12, fill_color=color, line_color='black')
+
+
 ''' ------------------------------------------ Main Program ---------------------------------------------------
 
 The program has 2 main panels associated with events collection loops
@@ -316,14 +336,17 @@ In the windowed version, matplotlib plots don't interfere with the event loops :
 # ---------------- First Panel : Shannon's Equation  -------------------
 
 form_i = {"size":(22,1),"justification":'left',"enable_events":True}   # input label format
+form_iv = {"size":(8,1),"justification":'center'}   # imput value format
 form_ov = {"size":(20,1),"justification":'center'}   # output value format
 form_o = {"size":(65,1),"justification":'right',"enable_events":True}  # output label format, also using input elements
+form_CRC = {"size":(8,1),"justification":'center',"enable_events":True} # CRC Format
 
 sg.set_options(auto_size_buttons=False, button_element_size=(14,1), element_padding =(5,5))
 
 col1=sg.Column([[sg.Frame('Theoretical Exploration',
-        [[sg.Text(' Reference C/N [dB] ',**form_i,key='-iCNR-'),sg.Input('12',size=(5,1),key='-CNR-')],
-        [sg.Text(' Reference BW [MHz] ',**form_i,key='-iBW-'),sg.Input('36',size=(5,1),key='-BW-')],
+        [[sg.Text(' Reference C/N [dB] ', **form_i,key='-iCNR-'),sg.Input('12', **form_iv, key='-CNR-')],
+          [sg.Text(' Reference BW [MHz] ', **form_i,key='-iBW-'),sg.Input('36', **form_iv, key='-BW-'),
+         sg.Text('',size=(34,1)),sg.Text('', **form_CRC, key='-CRC-'), LEDIndicator('-OK-')],
         [sg.Text('Power to Noise Power Density Ratio : C/N\N{SUBSCRIPT ZERO}', **form_o,key='-iC_N0-'),
          sg.Input(**form_ov,key='-C_N0-')],
         [sg.Text('Theoretical BR at infinite BW : 1.44 C/N\N{SUBSCRIPT ZERO}', **form_o,key='-iBRinf-'),
@@ -334,14 +357,11 @@ col1=sg.Column([[sg.Frame('Theoretical Exploration',
          sg.Input(**form_ov, key='-BRbw-')],
         [sg.Text('C / N = C / (N\N{SUBSCRIPT ZERO}.B) [Linear Format]', **form_o,key='-iCNRlin-'),
          sg.Input(**form_ov, key='-CNRlin-')],
-        [sg.Text(' BW Increase Factor ',**form_i,key='-iBWmul-'),
-         sg.Input('1', size=(5, 1), key='-BWmul-')],
-        [sg.Text(' Power Increase Factor ',**form_i,key='-iCmul-'),
-         sg.Input('2', size=(5, 1), key='-Cmul-')],
-        [sg.Text('Bit Rate Increase Factor', **form_o,key='-iBRmul-'),
-         sg.Input(**form_ov, key='-BRmul-')],
-         [sg.Button(' Evaluation ', key='-Evaluation-', visible=False, bind_return_key = True),
-         sg.Button('BW Sensitivity', pad=((60,5),(5,5)), key='-BW_Graph-'),
+        [sg.Text(' BW Increase Factor ',**form_i,key='-iBWmul-'), sg.Input('1', **form_iv, key='-BWmul-')],
+        [sg.Text(' Power Increase Factor ',**form_i,key='-iCmul-'), sg.Input('2', **form_iv, key='-Cmul-')],
+        [sg.Text('Bit Rate Increase Factor', **form_o,key='-iBRmul-'), sg.Input(**form_ov, key='-BRmul-')],
+         [sg.Button('Evaluation', visible=False, key='-Evaluation-', bind_return_key = True),
+         sg.Button('BW Sensitivity', pad=((60,5),(2,2)), key='-BW_Graph-'),
          sg.Button('Power Sensitivity',key='-Pow_Graph-'),
          sg.Button('BR Factor Map', key='-Map-'),
          sg.Button('Go to Real World', key='-Real-')]])]])
@@ -365,6 +385,9 @@ window['-BW-'].Update('36')
 window['-BWmul-'].Update('1')
 window['-Cmul-'].Update('2')
 
+File_CRC=hex(binascii.crc32(open('Shannon.py', 'rb').read()) & 0xFFFFFFFF)[2:].upper()
+print("File's CRC : ", File_CRC)
+
 Win_time_out = 500   # Time out approach required for enter capture in the Web version
 First_Pass = True
 Err_msg = False
@@ -385,7 +408,9 @@ while True:
                 window['-Dialog-'].Update(Shd.Help['-iShannon-'])
                 First_Pass = False
 
-            CNR_Nyq=float(values['-CNR-'])
+            CNR_List=values['-CNR-']   # CNR can be a combination of comma separated CNRs
+            CNR_Nyq=Combine_CNR(*[float(val) for val in CNR_List.split(',')])
+
             BW_Nyq=float(values['-BW-'])
 
             CNR_l, BRinf, C_N0_l, BRbw = Shannon_Points(BW_Nyq,CNR_Nyq)
@@ -396,7 +421,7 @@ while True:
             window['-BRinf-'].Update(BR_Format(BRinf))
             window['-BRunit-'].Update(BR_Format(BRunit))
             window['-BRbw-'].Update(BR_Format(BRbw))
-            window['-CNRlin-'].Update("{:.1f}".format(CNR_l))
+            window['-CNRlin-'].Update("{:.1f}".format(CNR_Nyq)+" [dB] .. "+"{:.1f}".format(CNR_l)+' [Linear]')
 
             BWmul=float(values['-BWmul-'])
             Cmul=float(values['-Cmul-'])
@@ -404,11 +429,14 @@ while True:
             BRmul=BR_Multiplier(BWmul,Cmul,CNR_Nyq)
             window['-BRmul-'].Update("{:.2f}".format(BRmul))
 
+            Params = str(CNR_Nyq)+','+str(BW_Nyq)+','+str(BWmul)+','+str(Cmul)
+            Params_CRC = (hex(binascii.crc32(Params.encode('ascii')) & 0xFFFFFFFF)[2:].upper())  # Params' CRC
+
         elif event == '-Wiki-':
             webbrowser.open('https://en.wikipedia.org/wiki/Claude_Shannon')
 
         elif event in ('-iC_N0-','-iCNR-','-iBRinf-','-iBRunit-','-iBRbw-','-iCNRlin-','-iBRmul-','-iCmul-',
-                       '-iBWmul-','-iBW-','-iShannon-','Advanced','Help' ):
+                       '-iBWmul-','-iBW-','-iShannon-', '-CRC-', 'Advanced','Help' ):
             window['-Dialog-'].Update(Shd.Help[event])
 
         elif event == '-BW_Graph-':
@@ -508,23 +536,26 @@ while True:
 
         elif event == '-Real-': # ---------------- Second Panel : Real World  -------------------
 
+            P_i1, P_i2, P_i3 = '', '', ''
+
             fr1 = sg.Frame('Satellite Link',[
-                    [sg.Text('Frequency  [GHz]',**form_i,key='-iFreq-'),
-                     sg.Input('12', size=(5, 1), key='-Freq-'),
+                    [sg.Text('Frequency [GHz]',**form_i,key='-iFreq-'),
+                     sg.Input('12', **form_iv, key='-Freq-'),
                      sg.Text('Path Length [km] ​', **form_i, key='-iPath-'),
-                     sg.Input('38000', size=(5, 1), key='-Path_Length-'),
+                     sg.Input('38000', **form_iv, key='-Path_Length-'),
                      sg.Text('Rain & Gaz Attenuation [dB] ​', **form_i, key='-iFade-'),
-                     sg.Input('0.2', size=(5, 1), key='-Rain_Fade-')],
+                     sg.Input('0.2', **form_iv, key='-Rain_Fade-')],
                     [sg.Text('HPA Output Power [W]',**form_i,key='-iHPA-'),
-                     sg.Input('120', size=(5, 1), key='-HPA_P-'),
+                     sg.Input('120', **form_iv, key='-HPA_P-'),
                     sg.Text('Output Losses [dB]',**form_i,key='-iLoss-'),
-                     sg.Input('2', size=(5, 1), key='-Losses-'),
-                    sg.Text('Impairments C/I [dB]', **form_i, key='-iSCIR-'),
-                     sg.Input('20', size=(5, 1), key='-Sat_CIR-')],
+                     sg.Input('2', **form_iv, key='-Losses-'),
+                    sg.Text('Signal Impairments C/I [dB]', **form_i, key='-iSCIR-'),
+                     sg.Input('25, 25', **form_iv, key='-Sat_CIR-')],
                     [sg.Text('Beam Diameter [\N{DEGREE SIGN}]',**form_i,key='-iSBeam-'),
-                     sg.Input('3', size=(5, 1), key='-Sat_Beam-'),
+                     sg.Input('3', **form_iv, key='-Sat_Beam-'),
                     sg.Text('Offset from Peak [dB] ',**form_i,key='-iGOff-'),
-                     sg.Input('0', size=(5, 1), key='-Gain_Offset-')],
+                     sg.Input('0', **form_iv, key='-Gain_Offset-'), sg.Text('',size=(7, 1)),
+                     sg.Text('', **form_CRC,key='-CRC1-'), LEDIndicator('-OK1-')],
                     [sg.Text('Output Power', **form_o,key='-iOPow-'),
                     sg.Input('', size=(35, 1), key='-Feed_P-', justification='center')],
                     [sg.Text('Satellite Antenna Gain​', **form_o,key='-iSGain-'),
@@ -538,10 +569,11 @@ while True:
                     ], key='-SatLink-')
 
             fr2=sg.Frame('Radio Front End ',[
-                    [sg.Text('Customer Antenna Size [m] ​',**form_i,key='-iCPE-'),
-                     sg.Input('0.6', size=(5, 1), key='-CPE_Ant-'),
+                    [sg.Text('Receive Antenna Size [m]​',**form_i,key='-iCPE-'),
+                     sg.Input('0.6', **form_iv, key='-CPE_Ant-'),
                      sg.Text('Noise Temperature [K] ​', **form_i, key='-iCPE_T-'),
-                     sg.Input('140', size=(5, 1), key='-CPE_T-')],
+                     sg.Input('140', **form_iv, key='-CPE_T-'), sg.Text('',size=(7, 1)),
+                     sg.Text('', **form_CRC, key='-CRC2-'),LEDIndicator('-OK2-')],
                     [sg.Text('Customer Antenna Effective Area and G/T', **form_o,key='-iCGain-'),
                     sg.Input('', size=(35, 1), key='-CPE_G-', justification='center')],
                     [sg.Text('RX Power at Antenna Output', **form_o,key='-iRXPow-'),
@@ -560,15 +592,16 @@ while True:
 
             fr3=sg.Frame('Baseband Unit',[
                     [sg.Text('Occupied Bandwidth [MHz]',**form_i,key='-iBW-'),
-                    sg.Input('36', size=(5, 1), key='-BW-'),
+                    sg.Input('36', **form_iv, key='-BW-'),
                     sg.Text('Nyquist Filter Rolloff [%]',**form_i,key='-iRO-'),
-                    sg.Input('5', size=(5, 1), key='-RO-'),
+                    sg.Input('5', **form_iv, key='-RO-'),
                     sg.Text('Higher Layers Overhead [%]', **form_i, key='-iOH-'),
-                    sg.Input('5', size=(5, 1), key='-OH-')],
+                    sg.Input('5', **form_iv, key='-OH-')],
                     [sg.Text('Signal Impairments C/I [dB]',**form_i,key='-iCIR-'),
-                    sg.Input('20', size=(5, 1), key='-CIR-'),
-                    sg.Text('Implementation Penalty vs theory [dB]​',**form_i,key='-iPenalty-'),
-                    sg.Input('1.5', size=(5, 1), key='-Penalty-')],
+                    sg.Input('20', **form_iv, key='-CIR-'),
+                    sg.Text('Implementation Penalty [dB]​',**form_i,key='-iPenalty-'),
+                    sg.Input('1.5', **form_iv, key='-Penalty-'), sg.Text('',size=(7, 1)),
+                    sg.Text('', **form_CRC, key='-CRC3-'), LEDIndicator('-OK3-')],
                     [sg.Text('Nyquist Bandwidth', **form_o,key='-iNBW-'),
                     sg.Input('', size=(35, 1), key='-N_BW-', justification='center')],
                     [sg.Text('Signal to Noise Ratio in Available BW', **form_o,key='-iCNRbw-'),
@@ -586,7 +619,7 @@ while True:
                     [sg.Text('Practical Higher Layers Bit Rate', **form_o,key='-iBRhigh-'),
                     sg.Input('', size=(35, 1), key='-BRhigh-', justification='center')],
                     [sg.Button('Evaluation', key='-Evaluation-',visible=False, bind_return_key = True),
-                    sg.Button('BW Sensitivity', pad=((100,5),(5,5)), key='-BW_Graph-'),
+                    sg.Button('BW Sensitivity', pad=((100,5),(2,2)), key='-BW_Graph-'),
                     sg.Button('Power Sensitivity',key='-Pow_Graph-'),
                     sg.Button('BR Factor Map', key='-Map-'),
                     sg.Button('Back to Theory', key='-Back-')],
@@ -599,7 +632,7 @@ while True:
 
             layout2 =[
                     [sg.Column([[fr1],[fr2],[fr3]]),
-                    sg.Column([[sg.Text('',size=(1,1))],
+                    sg.Column([[sg.Text('', size=(55, 1), justification='center', key='-FCRC-')],
                     [sg.Button('Wiki : Harry Nyquist​', size=(25,1), key='-W_Nyquist-'),
                     sg.Button('Wiki : Richard Hamming​', size=(25,1), key='-W_Hamming-')],
                     [sg.Button('Wiki : Andrew Viterbi​', size=(25,1), key='-W_Viterbi-'),
@@ -609,10 +642,12 @@ while True:
 
             window2 = sg.Window('Shannon and Friends in the Real World', layout2, finalize=True)
 
+            window2['-FCRC-'].Update('Program\'s CRC: ' + File_CRC)
+
             # Needed for the Web version (on a finalized window)
             window2['-Freq-'].Update('12')
             window2['-HPA_P-'].Update('120')
-            window2['-Sat_CIR-'].Update('20')
+            window2['-Sat_CIR-'].Update('25, 25')
             window2['-Losses-'].Update('2')
             window2['-Sat_Beam-'].Update('3')
             window2['-Gain_Offset-'].Update('0')
@@ -632,6 +667,7 @@ while True:
 
                 event2, values = window2.read(timeout=Win_time_out,timeout_key = '__TIMEOUT__')
                 print(event2)
+                P_err = 0  # Error ID
 
                 try:
 
@@ -644,14 +680,16 @@ while True:
                             window2['-Dialog-'].Update(Shd.Help2['-Satellite-'])
                             First_Pass = False
 
+                        P_err = 1  # Error ID
                         Freq = float(values['-Freq-']) # GHz
                         HPA_Power = float(values['-HPA_P-']) # Watts
                         Sat_Loss = float(values['-Losses-'])  # dB
-                        Sat_CIR = float(values['-Sat_CIR-'])  # dB
+                        Sat_CIR_List = values['-Sat_CIR-']  # list if comma separated CIR contributions in dB
+                        Sat_CIR = Combine_CNR(*[float(val) for val in Sat_CIR_List.split(',')])
                         Sig_Power = HPA_Power * 10 ** (-Sat_Loss / 10)  # Watts
                         Sat_Beam = float(values['-Sat_Beam-'])  #dB
                         Gain_Offset = float(values['-Gain_Offset-'])  #dB
-                        Sat_Ant_eff = 0.6
+                        Sat_Ant_eff = 0.65  # Factor
                         Path_Length = float(values['-Path_Length-'])  # kilometer
                         Rain_Fade = float(values['-Rain_Fade-'])  #dB
                         window2['-Feed_P-'].Update(Power_Format(Sig_Power))
@@ -679,14 +717,18 @@ while True:
                         PFD_dB = 10 * log(PFD_l, 10)
                         window2['-PFD-'].Update(PFD_Format(PFD_l))
 
+                        P_err = 2  # Error ID
                         CPE_Ant_d = float(values['-CPE_Ant-'])  # meter
                         CPE_T_Clear= float(values['-CPE_T-'])  # K
                         CPE_Ant_eff = 0.6
                         CPE_T_Att = (CPE_T_Clear - 40) + 40 * 10 ** (-Rain_Fade/10) + 290 * (1 - 10 ** (-Rain_Fade/10))
                         k_Boltz = 1.38e-23  # J/K
-                        Penalties = float(values['-Penalty-'])  # dB, code penalty
+
+                        P_err = 3  # Error ID
+                        Penalties = float(values['-Penalty-'])  # dB, overall implementation penalty
                         Bandwidth = float(values['-BW-'])  # MHz
-                        CNR_Imp = float(values['-CIR-'])  # dB
+                        CNR_Imp_List = values['-CIR-']  # List of comma separated CNR impairments in dB
+                        CNR_Imp = Combine_CNR(*[float(val) for val in CNR_Imp_List.split(',')])
                         Rolloff = float(values['-RO-'])  # percent
                         Overheads = float(values['-OH-'])  # percent
 
@@ -766,12 +808,23 @@ while True:
                         window2['-BRhigh-'].Update(BR_Format(BR_Rcv_Higher)+" .. {:.0%}".format(BR_Rcv_H_Norm)+
                                         " .. {:.1f}".format(Spe_Higher)+" bps/Hz")
 
+                        Params1 = str(Freq) + ',' + str(Path_Length) + ',' + str(Rain_Fade) + ',' + \
+                                    str(HPA_Power) + ',' + str(Sat_Loss) + ',' + str(Sat_CIR) + ',' + \
+                                    str(Sat_Beam) + ',' + str(Gain_Offset)
+                        Params2 = str(CPE_Ant_d) + ',' + str(CPE_T_Clear)
+                        Params3 = str(Bandwidth) + ',' + str(Rolloff) + ',' + str(Overheads) + ',' + \
+                                    str(CNR_Imp) + ',' +  str(Penalties)
+
+                        Params1_CRC=hex(binascii.crc32(Params1.encode('ascii')) & 0xFFFFFFFF)[2:].upper()
+                        Params2_CRC = hex(binascii.crc32(Params2.encode('ascii')) & 0xFFFFFFFF)[2:].upper()
+                        Params3_CRC = hex(binascii.crc32(Params3.encode('ascii')) & 0xFFFFFFFF)[2:].upper()
+
                     elif event2 in ('-iFreq-','-iHPA-','-iSBeam-','-iPath-', '-iLoss-', '-iGOff-','-iFade-', '-iSCIR-',
                                       '-iOPow-','-iSGain-', '-iEIRP-', '-iPFD-', '-iCPE-','-iCGain-','-iRXPow-',
                                       '-iBRinf-','-iBRhalf-', '-iBRUnit-','-iBRdouble-','-iBW-','-iRO-','-iCIR-',
                                       '-iPenalty-', '-iOH-','-iNBW-', '-iCNRbw-','-iCNRnyq-','-iCNRrcv-','-iBRbw-',
                                       '-iBRnyq-','-iBRrcv-','-iBRhigh-','-Satellite-','-iPLoss-','Advanced','Help',
-                                      '-iN0-', '-iCPE_T-'):
+                                      '-CRC1-', '-CRC2-', '-CRC3-', '-iN0-','-iCPE_T-'):
                         window2['-Dialog-'].Update(Shd.Help2[event2])
                         
                     elif event2 == '-BW_Graph-' :
@@ -895,8 +948,23 @@ while True:
 
                 except ValueError:
                     window2['-Dialog-'].Update('Input fields only support numerical values')
+                    if P_err == 1 :
+                        window2['-CRC1-'].Update('-')
+                        SetLED(window2, '-OK1-', 'red')
+                    if P_err == 2 :
+                        window2['-CRC2-'].Update('-')
+                        SetLED(window2, '-OK2-', 'red')
+                    if P_err == 3 :
+                        window2['-CRC3-'].Update('-')
+                        SetLED(window2, '-OK3-', 'red')
                     Err_msg=True
                 else:
+                    window2['-CRC1-'].Update(Params1_CRC)
+                    window2['-CRC2-'].Update(Params2_CRC)
+                    window2['-CRC3-'].Update(Params3_CRC)
+                    SetLED(window2, '-OK1-', 'green')
+                    SetLED(window2, '-OK2-', 'green')
+                    SetLED(window2, '-OK3-', 'green')
                     if Err_msg :
                         window2['-Dialog-'].Update('Input Validated')
                         Err_msg = False
@@ -905,8 +973,13 @@ while True:
 
     except ValueError:
         window['-Dialog-'].Update('Input fields only support numerical values')
+        window['-CRC-'].Update('-')
+        SetLED(window, '-OK-', 'red')
         Err_msg = True
+        print(Params_CRC)
     else:
+        window['-CRC-'].Update(Params_CRC)
+        SetLED(window, '-OK-', 'green')
         if Err_msg:
             window['-Dialog-'].Update('Input Validated')
             Err_msg = False

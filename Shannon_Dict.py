@@ -11,8 +11,11 @@ Help={'-iCNR-':'Reference C/N [dB]\n\nReference Carrier to Noise Ratio in decibe
                 'formula is given by C/N\N{SUBSCRIPT ZERO}',
     '-iBRbw-':'Theoretical BR at Reference (BW,C/N)\n\nBit Rate theoretically achievable when the Bandwidth is '
               'constrained to the given value',
-    '-iCNRlin-':'C / N = C / (N\N{SUBSCRIPT ZERO}.B) [Linear Format]\n\nReference Carrier to Noise Ratio in linear '
-                'format, it\'s the value used in the Shannon\'s formula',
+    '-iCNRlin-':'C / N = C / (N\N{SUBSCRIPT ZERO}.B)\n\nReference Carrier to Noise Ratio. The C/N Ratio or CNR is '
+                'usually given in dBs or 10 log (C/N). Although the logarithm is convenient for many evaluations '
+                '(multiplications become additions), it\'s also good to consider the ratio itself (named here Linear '
+                'Format) to get some physical sense of the power ratio.'
+                '\n\nThe Carrier to Noise Ratio in linear format, is the value used in the Shannon\'s formula',
     '-iBRmul-':'Bit Rate Increase Factor\n\nBit Rate multiplying factor achieved when the Bandwidth and the Power '
                'and multiplied by a given set of values',
     '-iCmul-':'Power Increase Factor\n\nArbitrary multiplying factor applied to the Carrier\'s Power, for '
@@ -20,6 +23,8 @@ Help={'-iCNR-':'Reference C/N [dB]\n\nReference Carrier to Noise Ratio in decibe
     '-iBWmul-':'BW Increase Factor\n\nArbitrary multiplying factor applied to the Carrier\'s Bandwidth, for '
                'sensitivity analysis',
     '-iBW-':'Reference BW [MHz]\n\nReference Channel Bandwidth, this is a key parameter of the communication channel',
+    '-CRC-':'Cyclic Redundancy Check of the input parameters, for changes identification purposes.\n\n'
+            'https://en.wikipedia.org/wiki/Cyclic_redundancy_check',
     'Advanced': 'The model assumes that the communication channel is \"AWGN\", just Adding White Gaussian Noise to '
         'the signal. This noise is supposed to be random and white which means that noise at a given time is '
         'independent of noise at any other time, this implies that the noise has a flat and infinite spectrum.'
@@ -30,6 +35,7 @@ Help={'-iCNR-':'Reference C/N [dB]\n\nReference Carrier to Noise Ratio in decibe
         'impairments as if they were fully AWGN is in most of the cases very accurate.'
         'The reason for that is that the sum of random variables of unknown laws always tend to Gaussian and that '
         'in most system thermal noise is dominating, is actually white and gaussian and is whitening the rest.\n\n'
+        'The tool accepts lists of comma separated CNRs which will be combined in that way. \n\n '
         'In satellite systems, the noise is mainly coming from the electronics of the radio front end, the ground '
         'seen by the antenna, the stars and the atmospheric attenuator. In case of rain, the signal is punished twice '
         ': the attenuation makes it weaker and the rain attenuator generates noise added to the overall noise.\n\n'
@@ -79,10 +85,13 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                   'antenna. This loss is associated with filters, waveguide sections, switches ...\n\n'
                   'Typical value : 2.5 dB for large classical satellites, 1 dB for active antennas with HPAs close to '
                   'the feeds. If the power value is given at antenna level, the value should just be set to zero.',
-        '-iSCIR-':'Satellite C/I [dB]\n\n Signal impairment associated with satellite implementation,'
-                  'expressed as a signal to noise ratio to be combined with the intrinsic Signal to Noise Ratio '
-                  'affecting the link. Typical impairments are : intermodulation in the HPA, oscillator\'s phase'
-                  'noise ...',
+        '-iSCIR-':'Satellite C/I [dB]\n\nEffect of signal impairments associated with satellite implementation,'
+                  'expressed as a signal to impairment noise ratio to be combined with the intrinsic Signal to Noise '
+                  'Ratio affecting the link. Typical impairments are : intermodulation in the HPA, filtering effects, '
+                  'oscillator\'s phase noise ...\n\n'
+                  'The tool supports comma separated lists of C/I or C/N values expressed in dB. In addition to '
+                  'satellites impairments, one can use this feature to also simulate infrastructure C/N, uplink C/N, '
+                  'uplink interferences ...',
         '-iFade-':'Rain & Gaz Attenuation [dB]\n\nRain is affecting radio wave propagation, with a signal attenuating '
                   'increasing with the rain intensity and with the signal frequency. C band is almost unaffected, '
                   'Ku band is significantly affected, Ka band is severely affected, Q band is dramatically affected\n\n'
@@ -181,11 +190,15 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                 'avoiding inter-symbol interferences. Such a filter is called a Nyquist Filter. '
                 'and the mimimum theoretical bandwidth (Roll-Off = zero) is called Nyquist Bandwidth.\n\n'
                 'The Roll-Off or Excess of Bandwidth is usually expressed as a percentage of the Nyquist Bandwidth.',
-        '-iCIR-':'Receiver\'s C/I [dB]\n\n Signal impairment associated with terminal implementation, expressed as a '
-                'signal to noise ratio to be combined with the intrinsic Signal to Noise Ratio affecting the link.\n\n'
-                'Impairments are multiple : Phase Noise of the radio front end, Quantization Noise of the receiver\'s '
-                'Analog to Digital Conversion, effect of imperfect synchronisation ...\n\n'
-                'Typical values of C/I corresponding to total implementation impairments range from 15 to 25 dB',
+        '-iCIR-':'Receiver\'s C/I [dB]\n\nEffect of signal impairment associated with terminal implementation, '
+                'expressed as a signal to noise ratio to be combined with the intrinsic Signal to Noise Ratio affecting'
+                ' the link.\n\nImpairments are multiple : Phase Noise of the radio front end, Quantization Noise of the'
+                ' receiver\'s Analog to Digital Conversion, effect of imperfect synchronisation ...\n\n'
+                'The tool supports comma separated lists of C/I or C/N values expressed in dB. In addition to the '
+                'overall receiver\'s impairments, one can use this feature to simulate more details : downlink '
+                'interferences, LNB\'s phase noise, impairment of signal distribution ...\n\nNote that the signal '
+                'impairments provided for the satellite and the receiver are simply combined together and only '
+                'simulated in the practical bit rate evaluations.',
         '-iPenalty-':'Implementation Penalty vs theory [dB]\n\nTurbo and Turbo-like Codes are known for getting '
                      '"almost Shannon" performances. There are however still some implementation taxes '
                      ': codes always have a residual bit error rate, making it very low requires some CNR margin.\n\n'
@@ -220,7 +233,7 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                 'captured along the complete communication chain (at receiver ouptut). This ratio is the relevant one'
                 'for real-life performance evaluation. It is computed by combining the Signal to Noise in the Nyquist '
                 'Bandwidth, the Receiver\'s C/I and the Satellite\'s C/I. Note that these 2 items are themselves '
-                'resulting of many items.',
+                'resulting of many items which can be detailed as comma separated lists.',
         '-iBRbw-':'Theoretical Bit Rate in Available BW\n\nBit Rate theoretically achieved with zero Roll-Off in '
                 'the available bandwidth. This bit rate is given by a direct application of the Shannon Limit. '
                 'The normalized bit rate expressed as a percentage of the bit rate at infinite bandwidth is also given '
@@ -250,6 +263,9 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                       'All fields are initially filled with meaningful values, you should start the exploration by '
                       'changing the straightforward parameters and keep the intimidating figures unchanged. '
                       'All parameters are "clickable" for getting associated background information.',
+       '-CRC1-': 'Cyclic Redundancy Check of the input parameters, for changes identification purposes.',
+       '-CRC2-': 'Cyclic Redundancy Check of the input parameters, for changes identification purposes.',
+       '-CRC3-': 'Cyclic Redundancy Check of the input parameters, for changes identification purposes.',
         'Advanced': 'The Shannon Limit is  a very powerful tool to analyse communication systems\' design, trade offs.'
                     'All capacity evaluations in this tool are based on direct application of this formula taking '
                     'into account real world impairments via signal to noise combinations. With this approach, '
