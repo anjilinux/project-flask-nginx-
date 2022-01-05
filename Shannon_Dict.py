@@ -1,28 +1,32 @@
 
 Help={'-iCNR-':'Reference C/N [dB]\n\nReference Carrier to Noise Ratio in decibels : 10 log (C/N), where C is the '
-               'Carrier\'s power or Signal\'s Power and N is the Noise\'s Power, both are measured in the reference '
-               'Channel Bandwidth',
-    '-iC_N0-':'Power to Noise Power Density Ratio : C/N\N{SUBSCRIPT ZERO}\n\nCarrier\'s power (in Watts) divided by '
-              'the Noise Spectral Power Density (in Watts per MHz), the result\'s units are MHz',
+               'Carrier\'s power and N is the Noise\'s Power, both are measured in the reference '
+               'Channel Bandwidth.\n\nThe Carrier\'s power if often named Signal\'s Power and the Carrier to Noise Ratio'
+               ' is often named Signal to Noise Ratio.',
+    '-iBW-':'Reference BW [MHz]\n\nReference Channel Bandwidth, this is a key parameter of the communication channel.'
+            '\n\nThis bandwidth is usually a degree of freedom of the system design, eventually constrained by technological'
+            ' constraints and various kind of frequency usage regulations.',
+    '-iC_N0-':'Carrier Power to Noise Power Density Ratio : C/N\N{SUBSCRIPT ZERO}\n\nCarrier\'s power (in Watts) '
+              'divided by the Noise Spectral Power Density (in Watts per MHz), the result\'s units are MHz.',
     '-iBRinf-':'Theoretical BR at infinite BW : 1.44 C/N\N{SUBSCRIPT ZERO}\n\nBit Rate theoretically achievable when '
-               'the signal occupies an infinite Bandwidth, this value is a useful asympotical limit',
+               'the signal occupies an infinite Bandwidth, this value is a useful asympotical limit.',
     '-iBRunit-':'Theoretical BR at Spectral Efficiency = 1 : C/N\N{SUBSCRIPT ZERO}\n\nBit Rate theoretically '
-                'achievable at a Spectral Efficiency = 1. The corresponding value, deduced from the Shannon\'s '
-                'formula is given by C/N\N{SUBSCRIPT ZERO}',
+                'achievable at a Spectral Efficiency = 1 : Bit Rate in Mbps = Bandwith in MHz.'
+                '\n\nThe corresponding value, deduced from the Shannon\'s formula is given by C/N\N{SUBSCRIPT ZERO}.',
     '-iBRbw-':'Theoretical BR at Reference (BW,C/N)\n\nBit Rate theoretically achievable when the Bandwidth is '
-              'constrained to the given value',
-    '-iCNRlin-':'C / N = C / (N\N{SUBSCRIPT ZERO}.B)\n\nReference Carrier to Noise Ratio. The C/N Ratio or CNR is '
-                'usually given in dBs or 10 log (C/N). Although the logarithm is convenient for many evaluations '
-                '(multiplications become additions), it\'s also good to consider the ratio itself (named here Linear '
+              'constrained to the given reference value.',
+    '-iCNRlin-':'C / N = C / (N\N{SUBSCRIPT ZERO}.B)\n\nReference Carrier to Noise Ratio (or Signal to Noise Ratio).'
+                ' The C/N Ratio or CNR is usually given in dBs or 10 log (C/N). '
+                '\n\nAlthough the logarithm is convenient for many evaluations (multiplications become additions), '
+                'it\'s also good to consider the ratio itself (named here Linear '
                 'Format) to get some physical sense of the power ratio.'
-                '\n\nThe Carrier to Noise Ratio in linear format, is the value used in the Shannon\'s formula',
+                '\n\nThe Carrier to Noise Ratio in linear format, is the value used in the Shannon\'s formula.',
     '-iBRmul-':'Bit Rate Increase Factor\n\nBit Rate multiplying factor achieved when the Bandwidth and the Power '
-               'and multiplied by a given set of values',
+               'and multiplied by a given set of values.',
     '-iCmul-':'Power Increase Factor\n\nArbitrary multiplying factor applied to the Carrier\'s Power, for '
-              'sensitivity analysis',
+              'sensitivity analysis.',
     '-iBWmul-':'BW Increase Factor\n\nArbitrary multiplying factor applied to the Carrier\'s Bandwidth, for '
-               'sensitivity analysis',
-    '-iBW-':'Reference BW [MHz]\n\nReference Channel Bandwidth, this is a key parameter of the communication channel',
+               'sensitivity analysis.',
     '-CRC-':'Cyclic Redundancy Check of the input parameters, for changes identification purposes.\n\n'
             'https://en.wikipedia.org/wiki/Cyclic_redundancy_check',
     'Advanced': 'The model assumes that the communication channel is \"AWGN\", just Adding White Gaussian Noise to '
@@ -34,8 +38,8 @@ Help={'-iCNR-':'Reference C/N [dB]\n\nReference Carrier to Noise Ratio in decibe
         'Many impairments are actually non linear and/or non additive, but just combining equivalent C/N of all '
         'impairments as if they were fully AWGN is in most of the cases very accurate.'
         'The reason for that is that the sum of random variables of unknown laws always tend to Gaussian and that '
-        'in most system thermal noise is dominating, is actually white and gaussian and is whitening the rest.\n\n'
-        'The tool accepts lists of comma separated CNRs which will be combined in that way. \n\n '
+        'in most systems, thermal noise is dominating, is actually white and gaussian and is whitening the rest.\n\n'
+        'The tool accepts lists of comma separated CNRs which will be combined in that way. \n\n'
         'In satellite systems, the noise is mainly coming from the electronics of the radio front end, the ground '
         'seen by the antenna, the stars and the atmospheric attenuator. In case of rain, the signal is punished twice '
         ': the attenuation makes it weaker and the rain attenuator generates noise added to the overall noise.\n\n'
@@ -61,6 +65,49 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                  '(billions of cycles per second).\n\nFor satellite downlink (satellite to terminal), frequency bands '
                  'and frequencies are typically : L : 1.5 GHz , S : 2.2 GHz , C : 4 GHz , Ku : 12 GHz, Ka : 19 GHz, '
                  'Q : 40 GHz',
+        '-iSatAlt-':'Satellite Altitude [km]\n\nThe position of the satellite is expressed in latitude, longitude, '
+                    'altitude. The program doesnt simulate the orbit, any satellite coordinates can be used. '
+                    'A GEO satellite has a latitude of zero degrees and an altitude of 35786 km. LEO satellites '
+                    'have an altitude lower than 2000 km. MEO\'s altitudes are between LEO and GEO : the O3B '
+                    'constellation\'s altitude is 8063 km',
+        '-iSatLatLong-':'Satellite Latitude and Longitude [\N{DEGREE SIGN}]\n\nThe position of the satellite is '
+                        'expressed in latitude, longitude, altitude. The program doesnt simulate the orbit, any '
+                        'satellite coordinates can be used. A GEO satellite has a latitude of zero degrees and an '
+                        'altitude of 35786 km. LEO satellites have an altitude lower than 2000 km. MEO\'s altitudes are'
+                        ' between LEO and GEO : the O3B constellation\'s altitude is 8063 km',
+        '-iGSLatLong-':'Ground Station Latitude and Longitude [\N{DEGREE SIGN}]\n\nThe position of the ground station '
+                       'is expressed in latitude, longitude (the ground station is assumed to be at the surface of '
+                       'the earth).\n\nThe position of the ground station is affecting the link availability due to'
+                       ' the differences in weather statistics at different locations on earth (tropical regions have '
+                       'very heavy rains attenuating dramatically signals at high frequencies). It is also impacting '
+                       'the elevation angle at which the satellite is seen and thus the length of the path in the rain.'
+                       '\n\nThe position of the ground station is also impacting the overall path length and thus the '
+                       'path dispersion loss.\n\nUseful link to find coordinates of interest : '
+                       'https://www.gps-coordinates.net',
+        '-iAvail-':'Desired Link Availability [%]\n\nThe link availability in percentage of the time is a key '
+                   'performance indicator for satellite communications.\n\nIn this program the only cause of '
+                   'unavailability modelled in a probabilistic way is the attenuation caused by the atmosphere. A high '
+                   'desired link availability corresponds to a high signal attenuation : only rare and severe weather '
+                   'events exceeding this attenuation can interrupt the link.\n\nFor example for an availability of'
+                   '99.9%, the attenuation considered in the link sizing is only exceeded for 0.1% of the time.',
+        '-iPathLength-':'Path Length [km] @ Elevation [\N{DEGREE SIGN}]\n\nDistance in kilometers from the satellite '
+                        'to the ground station and elevation angle at which the satellite is seen. The actual distance'
+                        ' depends on the satellite\'s altitude and on the relative positions of the satellite and the '
+                        'ground station.\n\nThe minimum path length is the satellite altitude, achieved when the ground'
+                        ' station is under the satellite (elevation = 90\N{DEGREE SIGN}).\n\nA negative elevation '
+                        'implies that the satellite is not visible (beyond the horizon).',
+        '-iAtmLoss-':'Overall Atmospheric Attenuation [dB]\n\nThe Atmosphere is affecting radio wave propagation '
+                     'with a signal attenuation caused by rain precipitations and clouds, by scintillation and '
+                     'multi path effects, by sand and dust storms and also by atmospheric gases. \n\n'
+                     'Simply speaking, the attenuation is increasing with the rain intensity and with the signal '
+                     'frequency. C band is almost unaffected, Ku band is significantly affected, Ka band is severely '
+                     'affected, Q band is dramatically affected\n\nThe overall attenuation depends on the actual '
+                     'geographical location and on actual weather events. By nature, it is is thus statistical '
+                     '(considering the past) or probabilistic (considering the future).\n\nAll effects included, '
+                     'here are typical attenuation figures exceeded for 0.1% of the time in Europe from the GEO orbit '
+                     ': Ku: 2.5 dB, Ka: 6.9 dB, 22 dB \n\n'
+                     'The program uses ITU-Rpy, python implementation of the ITU-R P Recommendations: '
+                     'https://itu-rpy.readthedocs.io/en/latest/index.html',
         '-iHPA-':'HPA Power at operating point [W]\n\nPower of the High Power Amplifier used as a last stage of '
                  'amplification in the satellite payload.'
                  'The value in watts is the value at operating point and for the carrier of interest.\n\n'
@@ -77,10 +124,6 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                    'used in DTH. In single feed per beam HTS, a 1 dB value would give a typical median performance.'
                    'If you know the EIRP you have, the best is to iterate this value to get this EIRP '
                    '(the process will allow you to get a feeling of the tradeoff power / footprint size / EIRP. ',
-        '-iPath-':'Path Length [km]\n\nDistance in kilometers from the satellite to the customer\'s terminal. '
-                  'The actual distance depends on the orbit\'s altitude and on the positions of the satellite and '
-                  'the terminal.\n\nMinimum distances : GEO : 36000 km, O3B : 8000 km, Starlink : 550 km,\n\nTypical '
-                  'distances : GEO : 38000 km, O3B : 9000 km, Starlink : 700 km.',
         '-iLoss-':'Output Section Losses [dB]\n\nLoss of signal\'s power in the path connecting the HPA to the '
                   'antenna. This loss is associated with filters, waveguide sections, switches ...\n\n'
                   'Typical value : 2.5 dB for large classical satellites, 1 dB for active antennas with HPAs close to '
@@ -92,25 +135,17 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                   'The tool supports comma separated lists of C/I or C/N values expressed in dB. In addition to '
                   'satellites impairments, one can use this feature to also simulate infrastructure C/N, uplink C/N, '
                   'uplink interferences ...',
-        '-iFade-':'Rain & Gaz Attenuation [dB]\n\nRain is affecting radio wave propagation, with a signal attenuating '
-                  'increasing with the rain intensity and with the signal frequency. C band is almost unaffected, '
-                  'Ku band is significantly affected, Ka band is severely affected, Q band is dramatically affected\n\n'
-                  'Gazes composing the atmosphere are also causing attenuation even without rain, the corresponding '
-                  'attenuation is typically 0.2 dB in Ku. The Rain & gaz attenuation depends on the actual geographical'
-                  ' location and on actual weather events. By nature, it is is thus statistical (considering the past) '
-                  'or probabilistic (considering the future).\n\nAll effects included, here are typical attenuation '
-                  'figures exceeded for 0.1% of the time in Europe from the GEO orbit : Ku: 2.5 dB, Ka: 6.9 dB, 22 dB ',
         '-iOPow-':'Output Power [W]\n\nThe output power in watts at antenna output is associated with the useful '
                   'signal carrying user\'s information. It is also common to express this value in dBs (dBs transform '
                   'multiplications in additions, easier for human computation. Nevertheless, reasoning in watts tells '
                   'more about the physics.',
         '-iSGain-':'Satellite Antenna Gain \n\nAn antenna concentrating the signal in the direction of the users is '
                    'almost always required to compensate for the path loss associated with the distance from the '
-                   'satellite to the terminal.\n\n The antenna gain is the ratio between the signal radiated '
+                   'satellite to the terminal.\n\nThe antenna gain is the ratio between the signal radiated '
                    'on the axis of the antenna (direction of maximum radiation) and the signal radiated by an '
                    'antenna radiating equally in all directions (for the same input power).\n\n'
                    'Antenna gains are without units but can be expressed in dB for convenience : dBi = dB relative to'
-                   ' isotropic antenna (antenna radiating equally in all directions',
+                   ' isotropic antenna (antenna radiating equally in all directions)',
         '-iEIRP-':'Equivalent Isotropic Radiated Power\n\nThe product Power x Gain expressed in Watts is a convenient '
                   'characterisation of the satellite radiation capability. It does correspond to the power which would '
                   'be required for an isotropic antenna radiating in the same way in the direction of the antenna '
@@ -127,9 +162,9 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                    'This simply equals the surface in square meters of a sphere with a radius equal to the path length.'
                    'This attenuation is pretty big and is thus more humanly manageable in dB m\N{SUPERSCRIPT TWO}.\n\n'
                    'As the the vacuum is lossless, this "attenuation" is simply associated with the fact that only '
-                   'a marginal fraction of the power radiated is captured in square meter at destination, '
+                   'a marginal fraction of the power radiated is captured in one square meter at destination, '
                    'the rest is going somewhere else.',
-        '-iPFD-':'Power Flux Density, Clear Sky\n\nSignal power per square meter at the terminal side. '
+        '-iPFD-':'Power Flux Density\n\nSignal power per square meter at the terminal side. '
                  'The actual power captured by the terminal is given by this value multiplied by the effective surface '
                  'of the terminal\'s antenna.\n\nNote that if the surface of antenna is not perpendicular to the '
                  'propagation direction of the radio wave, the effective surface presented to the wave is reduced '
@@ -158,7 +193,7 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
         '-iRXPow-':'RX Power at Antenna Output\n\nPower at receiver\'s antenna output before amplification. '
                    'This power is extremely small and can only be exploited after strong amplification.\n\n'
                    'As the main source of noise is in general coming from this amplification, the first amplification '
-                   'stage has to be a Low Noise Amplifier. This power is "C" in the Shannon\'s equation.',
+                   'stage has to be a Low Noise Amplifier.\n\nThis power is "C" in the Shannon\'s equation.',
         '-iN0-' : 'Noise Power Density Antenna Output\n\nNoise Spectral Power Density of the radio front end under '
                   'actual link conditions (in Watts per MHz). '
                   'This PSD is N\N{SUBSCRIPT ZERO} in the Shannon\'s equation',
@@ -173,7 +208,7 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
         '-iBRUnit-':'Bit Rate at Spectral Efficiency=1\n\nBit Rate theoretically achievable at a Spectral Efficiency '
                     '= 1. The corresponding value, deduced from the Shannon\'s formula is given by '
                     'C/N\N{SUBSCRIPT ZERO}.\n\nThis data point has remarkable attributes : bandwidth = bit rate and '
-                    'C/N = 1 or 0 dB, which means Noise Power = Signal Power.',
+                    'C/N = 1 (equivalent to 0 dB), which means Noise Power = Signal Power.',
         '-iBRdouble-':'Bit Rate at Spectral Efficiency=2\n\nBit Rate theoretically achievable at a Spectral Efficiency '
                       '= 1. The corresponding value, deduced from the Shannon\'s formula is given by '
                       '0.667 C/N\N{SUBSCRIPT ZERO}.\n\nThis operating point is relatively bandwidth efficient '
@@ -196,20 +231,20 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                 ' receiver\'s Analog to Digital Conversion, effect of imperfect synchronisation ...\n\n'
                 'The tool supports comma separated lists of C/I or C/N values expressed in dB. In addition to the '
                 'overall receiver\'s impairments, one can use this feature to simulate more details : downlink '
-                'interferences, LNB\'s phase noise, impairment of signal distribution ...\n\nNote that the signal '
-                'impairments provided for the satellite and the receiver are simply combined together and only '
-                'simulated in the practical bit rate evaluations.',
+                'interferences, LNB\'s phase noise, impairment of signal distribution ...\n\nNote that signal '
+                'impairments associated with the satellite and the receiver are combined together with the link '
+                'noise to evaluate the practical bit rate.',
         '-iPenalty-':'Implementation Penalty vs theory [dB]\n\nTurbo and Turbo-like Codes are known for getting '
                      '"almost Shannon" performances. There are however still some implementation taxes '
                      ': codes always have a residual bit error rate, making it very low requires some CNR margin.\n\n'
                      'Other practical aspects also cost signal\'s energy like time and frequency synchronisation, '
-                     'physical layer framing...\n\n DVB-S2x, using LDPC codes and modern modulation related features '
+                     'physical layer framing...\n\nDVB-S2x, using LDPC codes and modern modulation related features '
                      'is typically 1 dB away of the Shannon Limit in Quasi Error Free operation. Real systems also have'
                      ' to take margins, considering a reasonable value of 0.5 dB, a total penalty of 1.5 dB can be '
                      'considered as typical.\n\n'
                      'Original Turbo codes designed with higher residual bit error rates can get much closer '
                      'to the Shannon Limit. ',
-        '-iOH-':'Higher Layers Overhead [%]\n\n The practical usage of information bits is based on a breakdown '
+        '-iOH-':'Higher Layers Overhead [%]\n\nThe practical usage of information bits is based on a breakdown '
                 'in multiple communications layers, all spending bits for the logistics of carrying user bits.'
                 'For example, the process of encapsulation of IP datagrams on a DVB-S2x physical layer using'
                 ' the GSE standard costs a few percents of net bit rate, spent in framing structures, integrity '
@@ -223,15 +258,15 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                 'bandwidth. Theoretically, filtering can be "brickwall", one symbol per second passing in 1 Hertz.'
                 'Practically, an excess of bandwidth is required, also called "Roll-Off of the filter. '
                 'The filter used is also designed to respect the symmetry condition expressed in the Nyquist Criterion '
-                'avoiding inter-symbol interferences. Such a filter is thus called Nyquist Filter. '
+                'avoiding inter-symbol interferences. Such a filter is thus called Nyquist Filter '
                 'and the minimum theoretical bandwidth (Roll-Off = zero) is called Nyquist Bandwidth.',
         '-iCNRbw-':'Signal to Noise Ratio in Available BW\n\n Ratio of the Signal Power and the Noise Power Captured '
                 ' in the available bandwidth.',
         '-iCNRnyq-':'Signal to Noise Ratio in Nyquist BW\n\nRatio of the Signal Power and the Noise Power Captured '
                 ' in the Nyquist Bandwidth = Available Bandwidth / ( 1 + Roll-Off).',
         '-iCNRrcv-':'Signal to Noise Ratio at Receiver Output\n\nRatio of the Signal Power and the total Noise Power'
-                'captured along the complete communication chain (at receiver ouptut). This ratio is the relevant one'
-                'for real-life performance evaluation. It is computed by combining the Signal to Noise in the Nyquist '
+                ' captured along the complete communication chain (at receiver ouptut). This ratio is the relevant one'
+                ' for real-life performance evaluation. It is computed by combining the Signal to Noise in the Nyquist '
                 'Bandwidth, the Receiver\'s C/I and the Satellite\'s C/I. Note that these 2 items are themselves '
                 'resulting of many items which can be detailed as comma separated lists.',
         '-iBRbw-':'Theoretical Bit Rate in Available BW\n\nBit Rate theoretically achieved with zero Roll-Off in '
@@ -240,16 +275,16 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                 'as well as the spectral efficiency of the available bandwidth.',
         '-iBRnyq-':'Theoretical Bit Rate in Nyquist BW\n\nBit Rate theoretically achieved in '
                 'the Nyquist bandwidth (after having removed the Nyquist Roll-Off from the available Bandwidth).'
-                'This bit rate is given by a direct application of the Shannon Limit. The normalized bit rate '
+                'This bit rate is given by a direct application of the Shannon Limit.\n\nThe normalized bit rate '
                 'expressed as a percentage of the bit rate at infinite bandwidth is also given as well as the spectral '
-                'efficiency of the available bandwidth.The efficiency in bit per symbol is also given and does '
+                'efficiency of the available bandwidth.\n\nThe efficiency in bit per symbol is also given and does '
                 'correspond to the classical spectral efficiency in the Nyquist bandwidth.',
         '-iBRrcv-':'Practical Physcial Layer Bit Rate\n\n Practical Bit Rate achieved using real-world conditions. '
                     'This bit rate is evaluated by using the "all degradations included" signal to noise ratio'
                     'in the Shannon\'s formula.'
                     'This bit rate does correspond to the user bits of the Physical Layer Frames.',
         '-iBRhigh-':'Practical Higher Layers Bit Rate\n\nPractical Bit Rate achieved using real-world modulation '
-                    'and coding and modern encapsulation methods of higher layers strcutures.\n\n This Bit Rate does '
+                    'and coding and modern encapsulation methods of higher layers strcutures.\n\nThis Bit Rate does '
                     'typically correspond to the user bits of the IP datagrams',
         '-Satellite-':'The evaluation is decomposed in 3 sections:\n\n'
                       '1. The satellite link : satellite transmitter and path to the receiver\'s location with '
@@ -258,7 +293,7 @@ Help2={'-iFreq-':'Frequency [GHz]\n\nFrequency of the electromagnetic wave suppo
                       'and as little noise as possible\n\n'
                       '3. The base-band processing unit : unit extracting from a modulated carrier the useful '
                       'information bits.'
-                      'As of today, all key functions are performed via digital signal processing : Nyquist filtering, '
+                      ' All key functions are usually performed via digital signal processing : Nyquist filtering, '
                       'synchronisation, demodulation, error correction, higher layer "decapsulation"...\n\n'
                       'All fields are initially filled with meaningful values, you should start the exploration by '
                       'changing the straightforward parameters and keep the intimidating figures unchanged. '
